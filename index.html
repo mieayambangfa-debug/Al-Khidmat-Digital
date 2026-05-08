@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Absensi Guru — Al-Khidmat Digital</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root {
+    --green:#1a6b3c;--green2:#2e8b57;--green3:#e8f5ee;
+    --gold:#c8a84b;--gold2:#f0d080;
+    --dark:#1a1a2e;--gray:#6b7280;--light:#f8fafc;
+    --red:#dc2626;--blue:#1d4ed8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--dark);min-height:100vh}
+
+  /* ── HEADER ── */
+  .header{background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;padding:12px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+  .header img{width:48px;height:48px;border-radius:50%;border:2px solid var(--gold)}
+  .header-text h1{font-size:1.1rem;font-weight:700}
+  .header-text p{font-size:.75rem;opacity:.85}
+  .header-bismillah{margin-left:auto;font-size:.9rem;color:var(--gold2);font-family:serif;text-align:right;line-height:1.4}
+  .badge-role{background:var(--gold);color:var(--dark);border-radius:20px;padding:3px 10px;font-size:.7rem;font-weight:700;margin-left:auto}
+
+  /* ── PAGES ── */
+  .page{display:none;padding:20px;max-width:900px;margin:0 auto}
+  .page.active{display:block}
+
+  /* ── LOGIN ── */
+  .login-wrap{max-width:400px;margin:30px auto}
+  .card{background:#fff;border-radius:16px;padding:28px;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+  .card h2{text-align:center;color:var(--green);margin-bottom:6px;font-size:1.3rem}
+  .card .subtitle{text-align:center;color:var(--gray);font-size:.82rem;margin-bottom:20px}
+  .form-group{margin-bottom:14px}
+  .form-group label{display:block;font-size:.82rem;font-weight:600;color:var(--dark);margin-bottom:5px}
+  .form-group input, .form-group select, .form-group textarea{width:100%;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:10px;font-size:.9rem;transition:.2s}
+  .form-group input:focus, .form-group select:focus{outline:none;border-color:var(--green)}
+  .btn{width:100%;padding:11px;border:none;border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer;transition:.2s}
+  .btn-green{background:linear-gradient(135deg,var(--green),var(--green2));color:#fff}
+  .btn-green:hover{opacity:.9}
+  .btn-red{background:var(--red);color:#fff}
+  .btn-outline{background:#fff;border:1.5px solid var(--green);color:var(--green)}
+  .btn-sm{width:auto;padding:7px 16px;font-size:.82rem}
+  .btn-gold{background:var(--gold);color:var(--dark)}
+  .err{color:var(--red);font-size:.8rem;text-align:center;margin-top:8px;display:none}
+
+  /* ── TABS ── */
+  .tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+  .tab{padding:8px 18px;border-radius:20px;border:1.5px solid var(--green);color:var(--green);font-size:.85rem;font-weight:600;cursor:pointer;background:#fff;transition:.2s}
+  .tab.active{background:var(--green);color:#fff}
+
+  /* ── SESI CARD ── */
+  .sesi-list{display:grid;gap:14px}
+  .sesi-card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.07);border-left:4px solid var(--green);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .sesi-card.nonaktif{border-left-color:#9ca3af;opacity:.7}
+  .sesi-info{flex:1;min-width:180px}
+  .sesi-info h3{font-size:1rem;color:var(--dark)}
+  .sesi-info p{font-size:.78rem;color:var(--gray);margin-top:3px}
+  .badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.7rem;font-weight:700}
+  .badge-aktif{background:#dcfce7;color:#166534}
+  .badge-selesai{background:#f3f4f6;color:#6b7280}
+  .sesi-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+  /* ── QR MODAL ── */
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;align-items:center;justify-content:center}
+  .modal-bg.open{display:flex}
+  .modal{background:#fff;border-radius:20px;padding:28px;max-width:420px;width:95%;text-align:center;position:relative}
+  .modal h2{color:var(--green);margin-bottom:4px}
+  .modal p{color:var(--gray);font-size:.85rem;margin-bottom:16px}
+  #qr-display{display:flex;justify-content:center;margin:16px 0}
+  .qr-timer{font-size:2rem;font-weight:700;color:var(--green);margin:10px 0}
+  .qr-kode{font-size:.75rem;color:var(--gray);word-break:break-all;margin-bottom:12px}
+  .close-btn{position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--gray)}
+
+  /* ── ABSENSI TABLE ── */
+  .table-wrap{overflow-x:auto;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07)}
+  table{width:100%;border-collapse:collapse;background:#fff}
+  thead{background:var(--green);color:#fff}
+  th,td{padding:10px 14px;font-size:.82rem;text-align:left}
+  tr:nth-child(even){background:#f9fafb}
+  td .status-hadir{color:#166534;font-weight:700}
+  td .status-terlambat{color:#b45309;font-weight:700}
+  td .status-alpha{color:var(--red);font-weight:700}
+
+  /* ── SCAN PAGE (GURU) ── */
+  .scan-wrap{max-width:480px;margin:0 auto}
+  #reader{width:100%;border-radius:14px;overflow:hidden;border:2px solid var(--green)}
+  .scan-result{background:#fff;border-radius:12px;padding:18px;margin-top:16px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.07)}
+  .scan-result.sukses{border:2px solid #22c55e}
+  .scan-result.gagal{border:2px solid var(--red)}
+  .scan-icon{font-size:2.5rem;margin-bottom:8px}
+
+  /* ── STAT CARDS ── */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px}
+  .stat-card{background:#fff;border-radius:12px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+  .stat-card .num{font-size:1.8rem;font-weight:700;color:var(--green)}
+  .stat-card .lbl{font-size:.75rem;color:var(--gray);margin-top:2px}
+
+  /* ── FORM SESI ── */
+  .form-sesi{background:#fff;border-radius:14px;padding:20px;margin-bottom:20px;box-shadow:0 2px 10px rgba(0,0,0,.07)}
+  .form-sesi h3{color:var(--green);margin-bottom:14px;font-size:1rem}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:500px){.form-row{grid-template-columns:1fr}.header-bismillah{display:none}}
+
+  /* ── LOADING ── */
+  .loading{text-align:center;padding:30px;color:var(--gray)}
+  .spinner{width:36px;height:36px;border:3px solid #e5e7eb;border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .guru-info-card{background:var(--green3);border-radius:12px;padding:14px;margin-bottom:16px;border:1px solid #a7f3d0}
+  .guru-info-card h3{color:var(--green);font-size:.95rem}
+  .guru-info-card p{font-size:.8rem;color:var(--gray);margin-top:3px}
+
+  .section-title{font-size:1rem;font-weight:700;color:var(--green);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header" id="main-header" style="display:none">
+  <img src="https://raw.githubusercontent.com/gamesfaqih2025-byte/AL-KHIDMAT-DIGITAL/refs/heads/main/Desain%20tanpa%20judul.png" alt="Logo" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 50 50%22><circle cx=%2225%22 cy=%2225%22 r=%2225%22 fill=%22%232e8b57%22/><text x=%2225%22 y=%2232%22 text-anchor=%22middle%22 fill=%22gold%22 font-size=%2220%22>ق</text></svg>'"/>
+  <div class="header-text">
+    <h1>Al-Khidmat Digital</h1>
+    <p>Sistem Manajemen Rumah Qur'an Digital</p>
+  </div>
+  <div class="header-bismillah">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</div>
+  <span class="badge-role" id="badge-role">-</span>
+  <button class="btn btn-sm btn-outline" style="margin-left:10px" onclick="logout()">Keluar</button>
+</div>
+
+<!-- ══════════════ PAGE: LOGIN ══════════════ -->
+<div class="page active" id="page-login">
+  <div class="login-wrap">
+    <div style="text-align:center;margin:30px 0 20px">
+      <img src="https://raw.githubusercontent.com/gamesfaqih2025-byte/AL-KHIDMAT-DIGITAL/refs/heads/main/Desain%20tanpa%20judul.png" style="width:80px;border-radius:50%;border:3px solid var(--gold)" onerror="this.style.display='none'"/>
+      <h2 style="color:var(--green);margin-top:10px">Al-Khidmat Digital</h2>
+      <p style="color:var(--gray);font-size:.85rem">Sistem Absensi Guru — Rumah Qur'an</p>
+      <p style="font-family:serif;color:var(--gold);font-size:1.05rem;margin-top:6px">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+    </div>
+    <div class="card">
+      <h2>🔐 Masuk</h2>
+      <p class="subtitle">Silakan masuk dengan akun Anda</p>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="in-email" placeholder="email@alkhidmat.id" autocomplete="username"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="in-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <button class="btn btn-green" onclick="doLogin()">Masuk</button>
+      <p class="err" id="err-login">Email atau password salah.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ PAGE: MANAJEMEN ══════════════ -->
+<div class="page" id="page-manajemen">
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('tab-dashboard')">📊 Dashboard</div>
+    <div class="tab" onclick="switchTab('tab-buat-sesi')">➕ Buat Sesi</div>
+    <div class="tab" onclick="switchTab('tab-rekap')">📋 Rekap Absensi</div>
+    <div class="tab" onclick="switchTab('tab-daftar-guru')">👥 Daftar Guru</div>
+  </div>
+
+  <!-- TAB: DASHBOARD -->
+  <div id="tab-dashboard">
+    <div class="stats" id="stat-cards">
+      <div class="stat-card"><div class="num" id="s-guru">-</div><div class="lbl">Total Guru</div></div>
+      <div class="stat-card"><div class="num" id="s-sesi">-</div><div class="lbl">Total Sesi</div></div>
+      <div class="stat-card"><div class="num" id="s-sesi-aktif">-</div><div class="lbl">Sesi Aktif</div></div>
+      <div class="stat-card"><div class="num" id="s-hadir-hari">-</div><div class="lbl">Hadir Hari Ini</div></div>
+    </div>
+    <div class="section-title">📅 Sesi Hadir Hari Ini</div>
+    <div class="sesi-list" id="sesi-hari-ini"><div class="loading"><div class="spinner"></div>Memuat sesi...</div></div>
+  </div>
+
+  <!-- TAB: BUAT SESI -->
+  <div id="tab-buat-sesi" style="display:none">
+    <div class="form-sesi">
+      <h3>➕ Buat Sesi Hadir Baru</h3>
+      <div class="form-group">
+        <label>Judul Sesi</label>
+        <input type="text" id="sesi-judul" placeholder="Contoh: Halaqah Pagi — Senin"/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tanggal</label>
+          <input type="date" id="sesi-tanggal"/>
+        </div>
+        <div class="form-group">
+          <label>Waktu Mulai</label>
+          <input type="time" id="sesi-waktu"/>
+        </div>
+      </div>
+      <button class="btn btn-green" onclick="buatSesi()">🕌 Buat Sesi & Tampilkan QR</button>
+      <p class="err" id="err-sesi">Harap isi semua kolom.</p>
+    </div>
+    <div class="section-title">📋 Semua Sesi</div>
+    <div class="sesi-list" id="semua-sesi"><div class="loading"><div class="spinner"></div>Memuat...</div></div>
+  </div>
+
+  <!-- TAB: REKAP -->
+  <div id="tab-rekap" style="display:none">
+    <div class="form-group" style="max-width:320px;margin-bottom:16px">
+      <label>Filter berdasarkan Sesi</label>
+      <select id="filter-sesi" onchange="loadRekap()"><option value="">-- Semua Sesi --</option></select>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nama Guru</th><th>Sesi</th><th>Waktu Scan</th><th>Status</th></tr></thead>
+        <tbody id="rekap-body"><tr><td colspan="4" class="loading">Memuat rekap...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: DAFTAR GURU -->
+  <div id="tab-daftar-guru" style="display:none">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nama</th><th>Email</th><th>No. HP</th><th>Status</th></tr></thead>
+        <tbody id="guru-body"><tr><td colspan="4" class="loading">Memuat...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ PAGE: GURU ══════════════ -->
+<div class="page" id="page-guru">
+  <div class="scan-wrap">
+    <div class="guru-info-card" id="guru-info-card">
+      <h3 id="guru-nama-display">-</h3>
+      <p id="guru-role-display">Guru / Muaddib</p>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTabGuru('tab-scan')">📷 Scan Absen</div>
+      <div class="tab" onclick="switchTabGuru('tab-riwayat')">📜 Riwayat Saya</div>
+    </div>
+
+    <div id="tab-scan">
+      <div class="card" style="margin-bottom:16px">
+        <h2 style="font-size:1rem;margin-bottom:8px">📷 Scan QR Code Absensi</h2>
+        <p style="font-size:.82rem;color:var(--gray);margin-bottom:14px">Arahkan kamera ke QR Code yang ditampilkan manajemen</p>
+        <div id="reader"></div>
+        <button class="btn btn-outline" style="margin-top:12px" id="btn-scan" onclick="toggleScan()">▶ Mulai Scan</button>
+      </div>
+      <div class="scan-result" id="scan-result" style="display:none">
+        <div class="scan-icon" id="scan-icon">✅</div>
+        <p id="scan-msg" style="font-weight:600"></p>
+        <p id="scan-detail" style="font-size:.8rem;color:var(--gray);margin-top:4px"></p>
+      </div>
+    </div>
+
+    <div id="tab-riwayat" style="display:none">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Sesi</th><th>Tanggal</th><th>Waktu Scan</th><th>Status</th></tr></thead>
+          <tbody id="riwayat-body"><tr><td colspan="4" class="loading">Memuat...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL QR ══════════════ -->
+<div class="modal-bg" id="modal-qr">
+  <div class="modal">
+    <button class="close-btn" onclick="tutupModal()">✕</button>
+    <h2>🕌 Sesi Hadir Aktif</h2>
+    <p id="modal-judul-sesi">-</p>
+    <div id="qr-display"></div>
+    <div class="qr-timer" id="qr-timer">--:--</div>
+    <div class="qr-kode" id="qr-kode-text"></div>
+    <button class="btn btn-red btn-sm" style="margin-bottom:8px" onclick="akhiriSesi()">⏹ Akhiri Sesi</button>
+    <br/>
+    <div id="live-absen" style="margin-top:12px;text-align:left">
+      <p style="font-size:.8rem;font-weight:600;color:var(--green);margin-bottom:6px">✅ Yang sudah hadir:</p>
+      <div id="live-list" style="font-size:.8rem;color:var(--gray)">Belum ada yang absen.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──
+const SB_URL = 'https://qwydhbavcgwmatguqmqy.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3eWRoYmF2Y2d3bWF0Z3VxbXF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NzYwNzEsImV4cCI6MjA5MzE1MjA3MX0.43b1nFSn2xV01oYOJ9Xbr7uynG_35MEjqM2l7Cj8z5o';
+const H = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+
+// ── STATE ──
+let currentUser = null, activeSesiId = null, liveInterval = null, timerInterval = null;
+let scannerRunning = false, html5Qr = null;
+
+// ── API HELPER ──
+async function sb(path, opts={}) {
+  const r = await fetch(SB_URL+'/rest/v1/'+path, {headers:H, ...opts});
+  if (!r.ok) { const e=await r.json(); throw new Error(e.message||r.status); }
+  return r.status===204 ? null : r.json();
+}
+
+// ── UTILS ──
+function show(id){document.getElementById(id).classList.add('active')}
+function hide(id){document.getElementById(id).classList.remove('active')}
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function fmtTime(ts){if(!ts)return'-';const d=new Date(ts);return d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
+function fmtDate(ts){if(!ts)return'-';const d=new Date(ts);return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}
+function genToken(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+
+// ── LOGIN ──
+async function doLogin() {
+  const email = document.getElementById('in-email').value.trim();
+  const pass  = document.getElementById('in-pass').value.trim();
+  const err   = document.getElementById('err-login');
+  err.style.display='none';
+  if(!email||!pass){err.textContent='Harap isi email dan password.';err.style.display='block';return;}
+  try {
+    const data = await sb(`users?email=eq.${encodeURIComponent(email)}&password_hash=eq.${encodeURIComponent(pass)}&aktif=eq.true&select=*`);
+    if(!data||data.length===0){err.textContent='Email atau password salah.';err.style.display='block';return;}
+    currentUser = data[0];
+    document.getElementById('main-header').style.display='flex';
+    document.getElementById('badge-role').textContent = currentUser.role==='manajemen'?'👑 Manajemen':'📖 Muaddib';
+    if(currentUser.role==='manajemen'){showPage('page-manajemen');loadDashboard();}
+    else{showPage('page-guru');loadGuruPage();}
+  } catch(e){err.textContent='Gagal terhubung: '+e.message;err.style.display='block';}
+}
+
+function logout(){
+  currentUser=null; stopScan(); clearInterval(liveInterval); clearInterval(timerInterval);
+  document.getElementById('main-header').style.display='none';
+  showPage('page-login');
+}
+
+// ══════════════════════════════
+// ── MANAJEMEN ──
+// ══════════════════════════════
+
+function switchTab(id) {
+  document.querySelectorAll('#page-manajemen > .tabs .tab').forEach((t,i)=>{
+    t.classList.toggle('active', t.getAttribute('onclick').includes(id));
+  });
+  ['tab-dashboard','tab-buat-sesi','tab-rekap','tab-daftar-guru'].forEach(t=>{
+    document.getElementById(t).style.display = t===id?'block':'none';
+  });
+  if(id==='tab-rekap')loadRekap();
+  if(id==='tab-daftar-guru')loadDaftarGuru();
+  if(id==='tab-buat-sesi')loadSemuaSesi();
+}
+
+async function loadDashboard() {
+  try {
+    const [gurus, sesis, absHari] = await Promise.all([
+      sb('users?role=eq.guru&select=id'),
+      sb('sesi_hadir?select=id,aktif'),
+      sb(`absensi?select=id&waktu_scan=gte.${new Date().toISOString().slice(0,10)}T00:00:00`)
+    ]);
+    document.getElementById('s-guru').textContent = gurus.length;
+    document.getElementById('s-sesi').textContent = sesis.length;
+    document.getElementById('s-sesi-aktif').textContent = sesis.filter(s=>s.aktif).length;
+    document.getElementById('s-hadir-hari').textContent = absHari.length;
+    loadSesiHariIni();
+  } catch(e){console.error(e);}
+}
+
+async function loadSesiHariIni() {
+  const today = new Date().toISOString().slice(0,10);
+  const el = document.getElementById('sesi-hari-ini');
+  try {
+    const data = await sb(`sesi_hadir?tanggal=eq.${today}&order=created_at.desc&select=*`);
+    if(!data||data.length===0){el.innerHTML='<p style="color:var(--gray);text-align:center;padding:20px">Belum ada sesi hari ini.</p>';return;}
+    el.innerHTML = data.map(s=>sesiCardHtml(s)).join('');
+  } catch(e){el.innerHTML='<p style="color:red">Gagal memuat: '+e.message+'</p>';}
+}
+
+async function loadSemuaSesi() {
+  const el = document.getElementById('semua-sesi');
+  try {
+    const data = await sb('sesi_hadir?order=created_at.desc&select=*');
+    if(!data||data.length===0){el.innerHTML='<p style="color:var(--gray);text-align:center;padding:20px">Belum ada sesi.</p>';return;}
+    el.innerHTML = data.map(s=>sesiCardHtml(s)).join('');
+  } catch(e){el.innerHTML='<p style="color:red">'+e.message+'</p>';}
+}
+
+function sesiCardHtml(s) {
+  return `<div class="sesi-card ${s.aktif?'':'nonaktif'}">
+    <div class="sesi-info">
+      <h3>${s.judul}</h3>
+      <p>📅 ${fmtDate(s.tanggal)} &nbsp;|&nbsp; ⏰ ${fmtTime(s.waktu_mulai)}</p>
+    </div>
+    <span class="badge ${s.aktif?'badge-aktif':'badge-selesai'}">${s.aktif?'AKTIF':'SELESAI'}</span>
+    <div class="sesi-actions">
+      ${s.aktif?`<button class="btn btn-sm btn-gold" onclick="tampilQR('${s.id}','${s.kode_qr}','${s.judul}')">📱 QR</button>
+      <button class="btn btn-sm btn-red" onclick="akhiriSesiId('${s.id}')">⏹ Akhiri</button>`:''}
+    </div>
+  </div>`;
+}
+
+async function buatSesi() {
+  const judul = document.getElementById('sesi-judul').value.trim();
+  const tgl   = document.getElementById('sesi-tanggal').value;
+  const wkt   = document.getElementById('sesi-waktu').value;
+  const err   = document.getElementById('err-sesi');
+  err.style.display='none';
+  if(!judul||!tgl||!wkt){err.textContent='Harap isi semua kolom.';err.style.display='block';return;}
+  const kode = genToken();
+  const payload = {judul, kode_qr:kode, dibuat_oleh:currentUser.id, tanggal:tgl,
+    waktu_mulai: tgl+'T'+wkt+':00', aktif:true};
+  try {
+    const res = await sb('sesi_hadir', {method:'POST', body:JSON.stringify(payload),
+      headers:{...H,'Prefer':'return=representation'}});
+    const sesi = Array.isArray(res)?res[0]:res;
+    tampilQR(sesi.id, sesi.kode_qr, sesi.judul);
+    document.getElementById('sesi-judul').value='';
+    loadSemuaSesi(); loadDashboard();
+  } catch(e){err.textContent='Gagal: '+e.message;err.style.display='block';}
+}
+
+// ── QR MODAL ──
+function tampilQR(sesiId, kode, judul) {
+  activeSesiId = sesiId;
+  document.getElementById('modal-judul-sesi').textContent = judul;
+  document.getElementById('qr-kode-text').textContent = 'Kode: '+kode;
+  const el = document.getElementById('qr-display');
+  el.innerHTML='';
+  new QRCode(el, {text: kode, width:220, height:220, correctLevel:QRCode.CorrectLevel.H});
+  document.getElementById('modal-qr').classList.add('open');
+  startModalTimer(sesiId);
+  startLiveAbsen(sesiId);
+}
+
+function startModalTimer(sesiId) {
+  clearInterval(timerInterval);
+  let sec = 0;
+  timerInterval = setInterval(()=>{
+    sec++;
+    const m = String(Math.floor(sec/60)).padStart(2,'0');
+    const s = String(sec%60).padStart(2,'0');
+    document.getElementById('qr-timer').textContent = m+':'+s;
+  }, 1000);
+}
+
+function startLiveAbsen(sesiId) {
+  clearInterval(liveInterval);
+  const loadLive = async () => {
+    try {
+      const data = await sb(`absensi?sesi_id=eq.${sesiId}&select=waktu_scan,status,users(nama)&order=waktu_scan.asc`);
+      const el = document.getElementById('live-list');
+      if(!data||data.length===0){el.textContent='Belum ada yang absen.';return;}
+      el.innerHTML = data.map((a,i)=>`<div style="padding:4px 0;border-bottom:1px solid #f3f4f6">
+        ${i+1}. <strong>${a.users?.nama||'-'}</strong> — ${fmtTime(a.waktu_scan)}
+        <span style="color:var(--green)">[${a.status}]</span></div>`).join('');
+    } catch(e){}
+  };
+  loadLive();
+  liveInterval = setInterval(loadLive, 5000);
+}
+
+function tutupModal() {
+  document.getElementById('modal-qr').classList.remove('open');
+  clearInterval(liveInterval); clearInterval(timerInterval);
+}
+
+async function akhiriSesi() {
+  if(!activeSesiId)return;
+  await akhiriSesiId(activeSesiId);
+  tutupModal();
+}
+
+async function akhiriSesiId(id) {
+  await sb(`sesi_hadir?id=eq.${id}`, {method:'PATCH',
+    body:JSON.stringify({aktif:false, waktu_selesai:new Date().toISOString()})});
+  loadDashboard(); loadSemuaSesi();
+}
+
+// ── REKAP ──
+async function loadRekap() {
+  const filterEl = document.getElementById('filter-sesi');
+  if(filterEl.options.length<=1) {
+    const sesis = await sb('sesi_hadir?order=created_at.desc&select=id,judul');
+    filterEl.innerHTML='<option value="">-- Semua Sesi --</option>'+
+      sesis.map(s=>`<option value="${s.id}">${s.judul}</option>`).join('');
+  }
+  const val = filterEl.value;
+  let q = 'absensi?select=waktu_scan,status,users(nama),sesi_hadir(judul)&order=waktu_scan.desc';
+  if(val) q += `&sesi_id=eq.${val}`;
+  try {
+    const data = await sb(q);
+    const body = document.getElementById('rekap-body');
+    if(!data||data.length===0){body.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--gray)">Belum ada data absensi.</td></tr>';return;}
+    body.innerHTML = data.map(a=>`<tr>
+      <td>${a.users?.nama||'-'}</td>
+      <td>${a.sesi_hadir?.judul||'-'}</td>
+      <td>${fmtTime(a.waktu_scan)}</td>
+      <td><span class="status-${a.status}">${a.status.toUpperCase()}</span></td>
+    </tr>`).join('');
+  } catch(e){}
+}
+
+async function loadDaftarGuru() {
+  try {
+    const data = await sb('users?role=eq.guru&order=nama.asc&select=*');
+    const body = document.getElementById('guru-body');
+    body.innerHTML = data.map(g=>`<tr>
+      <td>${g.nama}</td><td>${g.email}</td>
+      <td>${g.no_hp||'-'}</td>
+      <td><span class="badge ${g.aktif?'badge-aktif':'badge-selesai'}">${g.aktif?'Aktif':'Nonaktif'}</span></td>
+    </tr>`).join('');
+  } catch(e){}
+}
+
+// ══════════════════════════════
+// ── GURU / SCAN ──
+// ══════════════════════════════
+
+function loadGuruPage() {
+  document.getElementById('guru-nama-display').textContent = currentUser.nama;
+  document.getElementById('guru-role-display').textContent = 'Role: Guru / Muaddib';
+}
+
+function switchTabGuru(id) {
+  document.querySelectorAll('#page-guru .tabs .tab').forEach(t=>{
+    t.classList.toggle('active', t.getAttribute('onclick').includes(id));
+  });
+  ['tab-scan','tab-riwayat'].forEach(t=>{
+    document.getElementById(t).style.display = t===id?'block':'none';
+  });
+  if(id==='tab-riwayat')loadRiwayatGuru();
+}
+
+function toggleScan() {
+  if(scannerRunning) stopScan();
+  else startScan();
+}
+
+function startScan() {
+  document.getElementById('scan-result').style.display='none';
+  html5Qr = new Html5Qrcode('reader');
+  html5Qr.start({facingMode:'environment'},
+    {fps:10, qrbox:{width:220,height:220}},
+    onScanSuccess, ()=>{}
+  ).then(()=>{
+    scannerRunning=true;
+    document.getElementById('btn-scan').textContent='⏹ Hentikan Scan';
+  }).catch(e=>{showScanResult(false,'Kamera tidak bisa diakses','Pastikan izin kamera diaktifkan.');});
+}
+
+function stopScan() {
+  if(html5Qr && scannerRunning) {
+    html5Qr.stop().catch(()=>{});
+    scannerRunning=false;
+    document.getElementById('btn-scan').textContent='▶ Mulai Scan';
+  }
+}
+
+async function onScanSuccess(kode) {
+  stopScan();
+  try {
+    // Cari sesi aktif dengan kode ini
+    const sesis = await sb(`sesi_hadir?kode_qr=eq.${encodeURIComponent(kode)}&aktif=eq.true&select=*`);
+    if(!sesis||sesis.length===0){showScanResult(false,'QR Tidak Valid','Sesi tidak ditemukan atau sudah berakhir.');return;}
+    const sesi = sesis[0];
+
+    // Cek apakah sudah absen
+    const existing = await sb(`absensi?sesi_id=eq.${sesi.id}&guru_id=eq.${currentUser.id}&select=id`);
+    if(existing&&existing.length>0){showScanResult(false,'Sudah Absen','Anda sudah tercatat hadir di sesi ini.');return;}
+
+    // Tentukan status (terlambat jika >15 menit dari mulai)
+    const diffMin = (Date.now()-new Date(sesi.waktu_mulai).getTime())/60000;
+    const status = diffMin > 15 ? 'terlambat' : 'hadir';
+
+    await sb('absensi', {method:'POST', body:JSON.stringify({
+      sesi_id:sesi.id, guru_id:currentUser.id, status, waktu_scan:new Date().toISOString()
+    })});
+    showScanResult(true, status==='hadir'?'✅ Absen Berhasil!':'⚠️ Hadir (Terlambat)',
+      `Sesi: ${sesi.judul} | Status: ${status.toUpperCase()}`);
+  } catch(e){showScanResult(false,'Gagal Absen',e.message);}
+}
+
+function showScanResult(ok, msg, detail) {
+  const el = document.getElementById('scan-result');
+  el.style.display='block';
+  el.className='scan-result '+(ok?'sukses':'gagal');
+  document.getElementById('scan-icon').textContent = ok?'✅':'❌';
+  document.getElementById('scan-msg').textContent = msg;
+  document.getElementById('scan-detail').textContent = detail;
+}
+
+async function loadRiwayatGuru() {
+  try {
+    const data = await sb(`absensi?guru_id=eq.${currentUser.id}&select=waktu_scan,status,sesi_hadir(judul,tanggal)&order=waktu_scan.desc`);
+    const body = document.getElementById('riwayat-body');
+    if(!data||data.length===0){body.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--gray)">Belum ada riwayat absensi.</td></tr>';return;}
+    body.innerHTML = data.map(a=>`<tr>
+      <td>${a.sesi_hadir?.judul||'-'}</td>
+      <td>${fmtDate(a.sesi_hadir?.tanggal)}</td>
+      <td>${fmtTime(a.waktu_scan)}</td>
+      <td><span class="status-${a.status}">${a.status.toUpperCase()}</span></td>
+    </tr>`).join('');
+  } catch(e){}
+}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded',()=>{
+  const today = new Date().toISOString().slice(0,10);
+  const tWkt = new Date().toTimeString().slice(0,5);
+  const tgl = document.getElementById('sesi-tanggal');
+  const wkt = document.getElementById('sesi-waktu');
+  if(tgl) tgl.value = today;
+  if(wkt) wkt.value = tWkt;
+});
+</script>
+</body>
+</html>
